@@ -1,0 +1,124 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+const int BOARD_SIZE = 8;
+const int NUM_MINES = 10;
+const char MINE_CHAR = '*';
+const char UNKNOWN_CHAR = '#';
+const char FLAG_CHAR = 'F';
+
+void display_board(vector< vector<char> >& board, bool show_mines = false) {
+    cout << " ";
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        cout << " " << i + 1;
+    }
+    cout << endl;
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        cout << i + 1 << " ";
+        for (int j = 0; j < BOARD_SIZE; j++) {
+            if (board[i][j] == MINE_CHAR && !show_mines) {
+                cout << UNKNOWN_CHAR << " ";
+            } else {
+                cout << board[i][j] << " ";
+            }
+        }
+        cout << endl;
+    }
+}
+
+void place_mines(vector< vector<char> >& board) {
+    int num_placed = 0;
+    while (num_placed < NUM_MINES) {
+        int x = rand() % BOARD_SIZE;
+        int y = rand() % BOARD_SIZE;
+        if (board[x][y] != MINE_CHAR) {
+            board[x][y] = MINE_CHAR;
+            num_placed++;
+        }
+    }
+}
+
+bool is_valid_coordinate(int x, int y) {
+    return (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE);
+}
+
+int count_adjacent_mines(vector< vector<char> >& board, int x, int y) {
+    int count = 0;
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            if (i == 0 && j == 0) {
+                continue;
+            }
+            int new_x = x + i;
+            int new_y = y + j;
+            if (is_valid_coordinate(new_x, new_y) && board[new_x][new_y] == MINE_CHAR) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+void uncover_empty_cells(vector< vector<char> >& board, vector< vector<bool> >& uncovered, int x, int y) {
+    if (!is_valid_coordinate(x, y) || uncovered[x][y]) {
+        return;
+    }
+    uncovered[x][y] = true;
+    int adjacent_mines = count_adjacent_mines(board, x, y);
+    if (adjacent_mines == 0) {
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (i == 0 && j == 0) {
+                    continue;
+                }
+                int new_x = x + i;
+                int new_y = y + j;
+                uncover_empty_cells(board, uncovered, new_x, new_y);
+            }
+        }
+    } else {
+        board[x][y] = '0' + adjacent_mines;
+    }
+}
+
+bool is_game_over(vector< vector<char> >& board, vector< vector<bool> >& uncovered, int& x, int& y) {
+    if (board[x][y] == MINE_CHAR) {
+        return true;
+    }
+    if (count_adjacent_mines(board, x, y) == 0) {
+        uncover_empty_cells(board, uncovered, x, y);
+    } else {
+        board[x][y] = '0' + count_adjacent_mines(board, x, y);
+        uncovered[x][y] = true;
+    }
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        for (int j = 0; j < BOARD_SIZE; j++) {
+            if (board[i][j] == MINE_CHAR) {
+                if (uncovered[i][j]) {
+                    cout << "BOOM! You hit a mine. Game over." << endl;
+                    return true;
+                }
+            } else {
+                if (!uncovered[i][j]) {
+                    return false;
+                }
+            }
+        }
+    }
+    cout << "Congratulations! You win!" << endl;
+    return true;
+}
+
+void mark_cell(vector< vector<char> >& board, vector< vector<bool> >& marked, int x, int y) {
+    if (!is_valid_coordinate(x, y)) {
+        return;
+    }
+    if (!marked[x][y]) {
+        marked[x][y] = true;
+        board[x][y] = FLAG_CHAR;
+    } else {
+        marked
